@@ -35,8 +35,90 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: Test
+      - name: Test (all packages)
         run: go test -race -count=1 ./...
+
+  coverage:
+    name: Coverage (≥80%)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Gate coverage on packages that are fully unit-testable.
+      # handlers/ and temporal/ are excluded: they require mocking the
+      # Temporal client and Slack API which belong in integration tests.
+      - name: Run coverage
+        run: |
+          go test \
+            -coverprofile=coverage.out \
+            -covermode=atomic \
+            ./config/... \
+            ./router/... \
+            ./memory/... \
+            ./observability/...
+
+      - name: Print coverage report
+        run: go tool cover -func=coverage.out
+
+      - name: Enforce 80% threshold
+        run: |
+          go tool cover -func=coverage.out | awk '/^total:/{
+            cov=$3
+            gsub(/%/, "", cov)
+            printf "Total coverage: %s%%\n", cov
+            if (cov + 0 < 80) {
+              printf "FAIL: %.1f%% is below the 80%% threshold\n", cov + 0
+              exit 1
+            }
+            printf "PASS: %.1f%% meets the 80%% threshold\n", cov + 0
+          }'
+
+      - name: Generate HTML report
+        run: go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.html
+          retention-days: 30
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false  # golangci-lint manages its own cache
+
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+  vulncheck:
+    name: Vulnerability scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        run: govulncheck ./...
 
   docker:
     name: Docker build

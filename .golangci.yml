@@ -1,0 +1,36 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - bodyclose      # HTTP response bodies not closed (catches leaks in LLM client)
+    - errcheck       # unchecked errors
+    - gofmt          # formatting
+    - gosec          # SAST: security anti-patterns
+    - govet          # go vet
+    - noctx          # http.NewRequest calls without context
+    - sqlclosecheck  # sql.Rows / sql.Stmt not closed
+    - staticcheck    # comprehensive static analysis (includes SA, S1, QF, ST families)
+    - unused         # dead exported and unexported identifiers
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+
+  gosec:
+    excludes:
+      # G115: integer overflow on conversion — fires constantly in generated
+      # protobuf/grpc code pulled in by the Temporal SDK; not actionable.
+      - G115
+      # G304: file path from variable — intentional: config paths are operator-
+      # supplied via env vars (ROUTING_CONFIG, MCP_CONFIG), not user input.
+      - G304
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+  exclude-rules:
+    # Test files: unchecked errors on t.Setenv / http body reads are fine.
+    - path: _test\.go
+      linters: [errcheck]

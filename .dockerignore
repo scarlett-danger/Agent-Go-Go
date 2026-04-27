@@ -1,0 +1,73 @@
+# Files NOT to ship into the Docker build context.
+
+# Keeps builds fast (smaller upload) and avoids accidentally baking secrets
+
+# or local state into the image.
+
+# Secrets — must never reach the image
+
+.env
+
+.env.local
+
+*.pem
+
+*.key
+
+# Local data — bot.db belongs on a volume, not in the image
+
+data/bot.db
+
+data/bot.db-wal
+
+data/bot.db-shm
+
+data/workspace/*
+
+# Build outputs
+
+Agent-Go-Go
+
+Agent-Go-Go.exe
+
+*.test
+
+*.out
+
+# Editor / IDE
+
+.vscode/
+
+.idea/
+
+.cursor/
+
+*.swp
+
+*.swo
+
+# Git metadata isn't needed at runtime
+
+.git/
+
+.github/
+
+.gitignore
+
+# Documentation isn't needed at runtime
+
+*.md
+
+DEPLOY.md
+
+README.md
+
+# CI / deployment configs that don't belong in the image
+
+fly.toml
+
+.dockerignore
+
+Dockerfile
+
+Makefile

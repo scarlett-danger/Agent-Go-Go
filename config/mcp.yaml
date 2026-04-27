@@ -1,0 +1,13 @@
+servers:
+
+  filesystem:
+
+    command: npx
+
+    args:
+
+      - "-y"
+
+      - "@modelcontextprotocol/server-filesystem"
+
+      - "./data/workspace" # the only path the bot can read/write

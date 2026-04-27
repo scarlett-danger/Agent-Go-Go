@@ -1,0 +1,91 @@
+default: general
+
+categories:
+
+  # --- Tool-using categories ------------------------------------------------
+
+  research:
+
+    model: "nvidia/nemotron-3-super-120b-a12b:free"
+
+    description: "Research, fact-finding, OSINT, anything needing live web or file data."
+
+    tools:
+
+      - read_file
+
+      - list_directory
+
+  code:
+
+    model: "nvidia/nemotron-3-super-120b-a12b:free"
+
+    description: "Programming, debugging, code review, architecture, DevOps, regex."
+
+    tools:
+
+      - read_file
+
+      - write_file
+
+      - list_directory
+
+      - search_files
+
+      - directory_tree
+
+  recall:
+
+    model: "nvidia/nemotron-3-super-120b-a12b:free"
+
+    description: "Questions about past conversations or the bot's own stored memory."
+
+    # SQLite MCP is disabled in this Go-only setup, so recall runs no-tool.
+
+  # --- No-tool categories (faster, cheaper, no agent loop) -----------------
+
+  reasoning:
+
+    model: "nvidia/nemotron-3-super-120b-a12b:free"
+
+    description: "Multi-step math, coding, logic puzzles, complex reasoning chains."
+
+  multilingual:
+
+    model: "qwen/qwen3-next-80b-a3b-instruct:free"
+
+    description: "Non-English content, translation, multilingual tasks."
+
+  creative:
+
+    model: "nvidia/nemotron-3-super-120b-a12b:free"
+
+    description: "Creative writing, stories, brainstorming, voice/tone work."
+
+  general:
+
+    model: "openai/gpt-oss-20b:free"
+
+    description: "Casual conversation, simple Q&A, anything that doesn't fit the others."
+
+# User overrides — type [!name] at the start of your message to bypass the judge.
+
+overrides:
+
+  nemotron: code
+
+  qwen: multilingual
+
+  gemma: general
+
+  code: code
+
+  research: research
+
+  web: research
+
+  reason: reasoning
+
+  creative: creative
+
+  recall: recall

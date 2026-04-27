@@ -12,7 +12,7 @@
 
 # inherit from this — only the binary copies over.
 
-FROM golang:1.22-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 WORKDIR /src
 

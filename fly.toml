@@ -1,103 +1,54 @@
-app            = "agent-go-go"
-primary_region = "dfw"
+# fly.toml app configuration file generated for agent-go-go on 2026-04-27T10:29:36Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-# ---------------------------------------------------------------------------
-# Build
-# ---------------------------------------------------------------------------
+app = 'agent-go-go'
+primary_region = 'dfw'
 
 [build]
-  # Dockerfile is at the repo root — no override needed.
-  # Remote builder runs on Fly's infrastructure; no local Docker daemon required.
 
-# ---------------------------------------------------------------------------
-# Non-secret environment variables
-# Secrets (tokens, signing secrets, API keys) must be set via:
-#   fly secrets set SLACK_USER_TOKEN="xoxp-..." SLACK_SIGNING_SECRET="..." \
-#                   OPENROUTER_API_KEY="sk-or-v1-..." \
-#                   TEMPORAL_HOST_PORT="<namespace>.tmprl.cloud:7233" \
-#                   SENTRY_DSN="https://..."
-# ---------------------------------------------------------------------------
+[deploy]
+  strategy = 'rolling'
 
 [env]
-  SERVER_PORT               = "8080"
+  DB_PATH = '/app/data/bot.db'
+  MCP_CONFIG = '/app/config/mcp.yaml'
+  MEMORY_MAX_TURNS = '20'
+  MEMORY_SUMMARIZE_AT = '30'
+  MEMORY_SUMMARIZE_FOLD = '10'
+  ROUTING_CONFIG = '/app/config/routing.yaml'
+  SENTRY_ENVIRONMENT = 'production'
+  SENTRY_TRACES_SAMPLE_RATE = '0.2'
+  SERVER_PORT = '8080'
+  TEMPORAL_NAMESPACE = 'default'
+  TEMPORAL_TASK_QUEUE = 'Agent-Go-Go-queue'
 
-  # SQLite — path must match the volume mount destination below.
-  DB_PATH                   = "/app/data/bot.db"
-
-  # Config files are baked into the image from the config/ directory.
-  ROUTING_CONFIG            = "/app/config/routing.yaml"
-  MCP_CONFIG                = "/app/config/mcp.yaml"
-
-  # Temporal — namespace and queue are not secret; host:port is set via secret.
-  TEMPORAL_NAMESPACE        = "default"
-  TEMPORAL_TASK_QUEUE       = "Agent-Go-Go-queue"
-
-  # Conversation memory tuning.
-  MEMORY_MAX_TURNS          = "20"
-  MEMORY_SUMMARIZE_AT       = "30"
-  MEMORY_SUMMARIZE_FOLD     = "10"
-
-  # Sentry — DSN is a secret; these are safe to commit.
-  SENTRY_ENVIRONMENT        = "production"
-  SENTRY_TRACES_SAMPLE_RATE = "0.2"
-  # SENTRY_RELEASE is injected at deploy time by the CI workflow:
-  #   flyctl deploy --env SENTRY_RELEASE=$(git rev-parse --short HEAD)
-
-# ---------------------------------------------------------------------------
-# HTTP service
-# ---------------------------------------------------------------------------
+[[mounts]]
+  source = 'agent_data'
+  destination = '/app/data'
 
 [http_service]
-  internal_port        = 8080
-  force_https          = true
-
-  # Keep at least one machine running at all times so Slack webhooks never
-  # hit a cold start. Slack will retry on timeout but the 3s window is tight.
-  auto_stop_machines   = "suspend"
-  auto_start_machines  = true
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'suspend'
+  auto_start_machines = true
   min_machines_running = 1
 
   [http_service.concurrency]
-    type       = "connections"
+    type = 'connections'
     hard_limit = 100
     soft_limit = 80
 
   [[http_service.checks]]
-    path         = "/health"
-    method       = "GET"
-    interval     = "30s"
-    timeout      = "5s"
-    # MCP subprocess startup (Node.js + uv) can take up to 60s on a cold
-    # machine. Give the app time to initialise before health checks begin.
-    grace_period = "60s"
-
-# ---------------------------------------------------------------------------
-# Persistent volume — SQLite database and MCP workspace files
-# Create once with: fly volumes create agent_data --region dfw --size 1
-# The volume survives deploys and machine restarts.
-# ---------------------------------------------------------------------------
-
-[[mounts]]
-  source      = "agent_data"
-  destination = "/app/data"
-
-# ---------------------------------------------------------------------------
-# Machine size
-# 1 GB RAM accommodates the Go binary, the Temporal worker goroutines, and
-# the MCP subprocesses (one Node.js process for filesystem/fetch, one Python
-# uv process for sqlite). Upgrade to 2 GB if you add more MCP servers.
-# ---------------------------------------------------------------------------
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '1m0s'
+    method = 'GET'
+    path = '/health'
 
 [[vm]]
-  cpu_kind = "shared"
-  cpus     = 1
-  memory   = "1gb"
-
-# ---------------------------------------------------------------------------
-# Deployment strategy
-# Rolling ensures at least one machine stays healthy during a deploy, which
-# matters for the always-on Slack webhook requirement above.
-# ---------------------------------------------------------------------------
-
-[deploy]
-  strategy = "rolling"
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
